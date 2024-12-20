@@ -1,59 +1,71 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
 #include <string.h>
 
 #define MAX 100
 
-// Complete structure of the code is explained in comments
+int is_digit(char c) {
+    return c >= '0' && c <= '9';
+}
 
-// Checks if the character is an operator
 int is_operator(char c) {
     return (c == '+' || c == '-' || c == '*' || c == '/');
 }
 
-// Calculate the expression
 double calculate(const char* expr) {
-    double number = 0;    // Stores the number read from the expression
+    double number = 0;    
     double stack[MAX];    
     int top = -1;
-    char last_operator = '+';  // Stores the previous operator
+    char last_operator = '+';  
+    int expecting_operator = 0;
 
     for (int i = 0; i < strlen(expr); i++) {
-        if (isspace(expr[i])) {     // Check if the character is a space
+        if (expr[i] == ' ') {     
             continue;
-        } else if (isdigit(expr[i])) {  // Check if the character is a digit (number)
-            number = 0;
-            while (i < strlen(expr) && isdigit(expr[i])) {
-                number = number * 10 + (expr[i] - '0');
-                i++;
-            }
-            i--;  // Adjust the index after reading the number
-
-            // Does the calculation based on the previous operator
-            if (last_operator == '*') {
-                stack[top] = stack[top] * number;
-            } else if (last_operator == '/') {
-                if (number == 0) {
-                    printf("Error: Division by zero.\n");
-                    return 0;
+        } else if (is_digit(expr[i])) {  
+            if (expecting_operator == 0) {
+                number = 0;
+                while (i < strlen(expr) && is_digit(expr[i])) {
+                    number = number * 10 + (expr[i] - '0');
+                    i++;
                 }
-                stack[top] = stack[top] / number;
+                i--;  
+
+                if (last_operator == '*') {
+                    stack[top] = stack[top] * number;
+                } else if (last_operator == '/') {
+                    if (number == 0) {
+                        printf("Error: Division by zero.\n");
+                        return 0;
+                    }
+                    stack[top] = stack[top] / number;
+                } else {
+                    stack[++top] = (last_operator == '+') ? number : -number;
+                }
+                expecting_operator = 1; 
             } else {
-                stack[++top] = (last_operator == '+') ? number : -number;
+                printf("Invalid expression\n");
+                return 0;
             }
         }
-        else if (is_operator(expr[i])) {     // Check if the character is an operator
+        else if (is_operator(expr[i])) {     
+            if (expecting_operator == 0) {
+                printf("Invalid expression\n");
+                return 0;
+            }
             last_operator = expr[i];
-        } else {       // If none of the above conditions are met, the character is invalid
-            printf("Error: Invalid character in the expression\n");
+            expecting_operator = 0; 
+        } else {       
+            printf("Invalid expression\n");
             return 0;
         }
     }
 
-    double result = 0;
+    if (expecting_operator == 0) { 
+        printf("Invalid expression\n");
+        return 0;
+    }
 
-    // Calculate the final result by adding all the elements in the stack
+    double result = 0;
     for (int i = 0; i <= top; i++) {
         result += stack[i];
     }
@@ -65,14 +77,11 @@ int main() {
     char expression[MAX];
 
     printf("Enter the expression: ");
-    fgets(expression, MAX, stdin);  // Reading a string of characters with a maximum size of 100
+    fgets(expression, MAX, stdin);  
 
     double result = calculate(expression);
 
-    // If the result is an integer, print as an integer; otherwise, print as a decimal
-    if ((int)result == result) {
-        printf("Result: %.0f\n", result);
-    } else {
+    if (result != 0 || expression[0] == '0') {  
         printf("Result: %.2f\n", result);
     }
 
